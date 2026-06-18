@@ -35,7 +35,7 @@ switch ($controller) {
         break;
 
     case 'usuarios':
-        exigirAutenticacao();
+        // exigirAutenticacao();
         $usuariosController = new UsuariosController();
 
         switch ($action) {
