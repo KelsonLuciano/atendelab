@@ -42,25 +42,23 @@
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" action="?controller=auth&action=entrar">
+                        <form method="post" action="<?= $baseUrl ?? '' ?>?controller=auth&action=entrar">
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">
                                     E-mail
                                 </label>
-
-                                <input type="email" name="email" id="email" class="form-control" required>
+                                <input type="email" class="form-control" id="email" name="email" required autofocus>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label for="senha" class="form-label">
                                     Senha
                                 </label>
-
-                                <input type="password" name="senha" id="senha" class="form-control" required>
+                                <input type="password" class="form-control" id="senha" name="senha" required>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">
+                            <button class="btn btn-success w-100" type="submit">
                                 Entrar
                             </button>
                         </form>

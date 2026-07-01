@@ -10,11 +10,11 @@ class AtendimentosController
         $this->pdo = $pdo;
     }
 
+    // 1. LISTAR ATENDIMENTOS (Com JOIN)
     public function listar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
         
-        // Listagem com JOIN conforme exigido pelo professor
         $sql = 'SELECT a.id, a.data_atendimento, a.horario_atendimento, a.status, a.descricao,
                        p.nome as pessoa_nome, 
                        t.nome as tipo_atendimento_nome, 
@@ -30,7 +30,8 @@ class AtendimentosController
         echo json_encode($atendimentos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
-    public function buscarPorId(): void
+    // 2. VISUALIZAR UM ATENDIMENTO (Antigo buscarPorId renomeado para a Aula 05)
+    public function visualizar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
@@ -55,13 +56,17 @@ class AtendimentosController
         echo json_encode($atendimento, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
+    // 3. CRIAR NOVO ATENDIMENTO
     public function criar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
         
         $pessoa_id = filter_input(INPUT_POST, 'pessoa_id', FILTER_VALIDATE_INT);
         $tipo_atendimento_id = filter_input(INPUT_POST, 'tipo_atendimento_id', FILTER_VALIDATE_INT);
-        $usuario_id = filter_input(INPUT_POST, 'usuario_id', FILTER_VALIDATE_INT);
+        
+        // MUDANÇA AQUI: Chamada do método seguro no lugar do INPUT_POST
+        $usuario_id = $this->usuarioResponsavel();
+        
         $descricao = trim($_POST['descricao'] ?? '');
         $data_atendimento = trim($_POST['data_atendimento'] ?? date('Y-m-d'));
         $horario_atendimento = trim($_POST['horario_atendimento'] ?? date('H:i:s'));
@@ -92,6 +97,7 @@ class AtendimentosController
         echo json_encode(['mensagem' => 'Atendimento cadastrado com sucesso.']);
     }
 
+    // 4. ATUALIZAR STATUS DO ATENDIMENTO (Atende a 'alterarStatus' e 'atualizarStatus')
     public function atualizarStatus(): void
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -113,5 +119,45 @@ class AtendimentosController
         $stmt->execute();
 
         echo json_encode(['mensagem' => 'Status do atendimento atualizado com sucesso.']);
+    }
+
+    // 5. NOVA ROTA EXIGIDA NA AULA 05 (Retorna listas para alimentar o formulário do Front)
+    public function opcoesFormulario(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            // Busca apenas as pessoas que estão com status ativo
+            $sqlPessoas = "SELECT id, nome FROM pessoas WHERE status = 'ativo' ORDER BY nome ASC";
+            $stmtPessoas = $this->pdo->query($sqlPessoas);
+            $pessoas = $stmtPessoas->fetchAll(PDO::FETCH_ASSOC);
+
+            // Busca apenas os tipos de atendimentos que estão ativos
+            $sqlTipos = "SELECT id, nome FROM tipos_atendimentos WHERE status = 'ativo' ORDER BY nome ASC";
+            $stmtTipos = $this->pdo->query($sqlTipos);
+            $tipos = $stmtTipos->fetchAll(PDO::FETCH_ASSOC);
+
+            // Retorna os dois blocos juntos num JSON estruturado para o Frontend
+            echo json_encode([
+                'pessoas' => $pessoas,
+                'tipos' => $tipos
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['erro' => 'Erro interno ao carregar dados do formulário.']);
+        }
+    }
+
+    // 6. FUNÇÃO DE SEGURANÇA (Pega o usuário da sessão logada)
+    private function usuarioResponsavel(): int
+    {
+        if (isset($_SESSION['usuario']['id'])) {
+            return (int) $_SESSION['usuario']['id'];
+        }
+
+        // Mantive o filter_input como fallback caso você esteja testando a rota 
+        // no Thunder Client e tenha esquecido de passar o cookie de sessão.
+        return (int) filter_input(INPUT_POST, 'usuario_id', FILTER_VALIDATE_INT);
     }
 }
