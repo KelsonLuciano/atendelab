@@ -152,32 +152,38 @@ switch ($controller) {
 
     // --- MÓDULO DE DADOS: ATENDIMENTOS ---
     case 'atendimentos':
-        exigirAutenticacao();
-        require_once __DIR__ . '/app/Controllers/AtendimentosController.php';
-        $atendimentosController = new AtendimentosController();
-        
-        switch ($action) {
-            case 'listar':
-                $atendimentosController->listar(); // Fornece os dados reais via JSON 
-                break;
-            case 'visualizar':
-                $atendimentosController->visualizar();
-                break;
-            case 'criar':
-                $atendimentosController->criar();
-                break;
-            case 'alterarStatus':
-            case 'atualizarStatus':
-                $atendimentosController->atualizarStatus();
-                break;
-            case 'opcoesFormulario':
-                $atendimentosController->opcoesFormulario();
-                break;
-            default:
-                responderRotaNaoEncontrada('Ação de atendimentos não encontrada.');
-                break;
-        }
-        break;
+            exigirAutenticacao();
+            require_once __DIR__ . '/app/Controllers/AtendimentosController.php';
+            $atendimentosController = new AtendimentosController();
+            
+            switch ($action) {
+                case 'listar':
+                    $atendimentosController->listar();
+                    break;
+                case 'buscar':
+                case 'buscarPorId':
+                case 'visualizar':
+                    $atendimentosController->visualizar();
+                    break;
+                    
+                // === ADICIONADO O CASE ATUALIZAR AQUI ===
+                case 'atualizar':
+                case 'criar':
+                    $atendimentosController->criar(); // Controla tanto o insert quanto o update seguros
+                    break;
+                    
+                case 'alterarStatus':
+                case 'atualizarStatus':
+                    $atendimentosController->atualizarStatus();
+                    break;
+                case 'opcoesFormulario':
+                    $atendimentosController->opcoesFormulario();
+                    break;
+                default:
+                    responderRotaNaoEncontrada('Ação de atendimentos não encontrada.');
+                    break;
+            }
+            break;
 
     // --- CASO NENHUM CONTROLLER EXISTA ---
     default:

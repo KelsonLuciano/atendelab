@@ -22,14 +22,12 @@ require __DIR__ . '/../layouts/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Pessoa Atendida *</label>
                     <select class="form-select" name="pessoa_id" id="selectPessoas" required>
-                        <option value="">Carregando pessoas...</option>
-                    </select>
+                        </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Tipo de Demanda *</label>
-                    <select class="form-select" name="tipo_id" id="selectTipos" required>
-                        <option value="">Carregando tipos...</option>
-                    </select>
+                    <select class="form-select" name="tipo_atendimento_id" id="selectTipos" required>
+                        </select>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Descrição / Relato do Atendimento *</label>
