@@ -42,7 +42,29 @@ switch ($controller) {
         }
         break;
 
-    // --- MÓDULO DE USUÁRIOS ---
+    // --- MÓDULO FRONTEND (Páginas visuais - ATUALIZADO CONFORME A APOSTILA) ---
+    case 'frontend':
+        exigirAutenticacao(); // Garante que as páginas estão protegidas por sessão 
+        require_once __DIR__ . '/app/Controllers/FrontendController.php';
+        $frontendController = new FrontendController();
+        
+        switch ($action) {
+            case 'pessoas':
+                $frontendController->pessoas(); // Carrega app/Views/pessoas/index.php 
+                break;
+            case 'tipos':
+                $frontendController->tiposAtendimentos(); // Carrega app/Views/tipos/index.php 
+                break;
+            case 'atendimentos':
+                $frontendController->atendimentos(); // Carrega app/Views/atendimentos/index.php 
+                break;
+            default:
+                responderRotaNaoEncontrada('Página visual não encontrada.');
+                break;
+        }
+        break;
+
+    // --- MÓDULO DE DADOS: USUÁRIOS ---
     case 'usuarios':
         exigirAutenticacao();
         require_once __DIR__ . '/app/Controllers/UsuariosController.php';
@@ -70,7 +92,7 @@ switch ($controller) {
         }
         break;
 
-    // --- MÓDULO DE PESSOAS ---
+    // --- MÓDULO DE DADOS: PESSOAS ---
     case 'pessoas':
         exigirAutenticacao();
         require_once __DIR__ . '/app/Controllers/PessoasController.php';
@@ -78,8 +100,9 @@ switch ($controller) {
         
         switch ($action) {
             case 'listar':
-                $pessoasController->listar();
+                $pessoasController->listar(); // Fornece os dados reais via JSON 
                 break;
+            case 'buscar':
             case 'buscarPorId':
                 $pessoasController->buscarPorId();
                 break;
@@ -98,7 +121,7 @@ switch ($controller) {
         }
         break;
 
-    // --- MÓDULO DE TIPOS DE ATENDIMENTOS ---
+    // --- MÓDULO DE DADOS: TIPOS DE ATENDIMENTOS ---
     case 'tipos':
         exigirAutenticacao();
         require_once __DIR__ . '/app/Controllers/TiposAtendimentosController.php';
@@ -106,8 +129,9 @@ switch ($controller) {
         
         switch ($action) {
             case 'listar':
-                $tiposController->listar();
+                $tiposController->listar(); // Fornece os dados reais via JSON 
                 break;
+            case 'buscar': // Adicionado suporte a 'buscar' exigido na pág. 7 da apostila 
             case 'buscarPorId':
                 $tiposController->buscarPorId();
                 break;
@@ -126,7 +150,7 @@ switch ($controller) {
         }
         break;
 
-    // --- MÓDULO DE ATENDIMENTOS (Atualizado com o trecho único da Aula 05) ---
+    // --- MÓDULO DE DADOS: ATENDIMENTOS ---
     case 'atendimentos':
         exigirAutenticacao();
         require_once __DIR__ . '/app/Controllers/AtendimentosController.php';
@@ -134,7 +158,7 @@ switch ($controller) {
         
         switch ($action) {
             case 'listar':
-                $atendimentosController->listar();
+                $atendimentosController->listar(); // Fornece os dados reais via JSON 
                 break;
             case 'visualizar':
                 $atendimentosController->visualizar();
@@ -153,11 +177,6 @@ switch ($controller) {
                 responderRotaNaoEncontrada('Ação de atendimentos não encontrada.');
                 break;
         }
-        break;
-
-    // --- MÓDULO FRONTEND (Páginas visuais) ---
-    case 'frontend':
-        responderRotaNaoEncontrada('Módulo frontend em desenvolvimento.');
         break;
 
     // --- CASO NENHUM CONTROLLER EXISTA ---

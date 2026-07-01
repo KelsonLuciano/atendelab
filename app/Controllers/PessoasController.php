@@ -18,7 +18,7 @@ class PessoasController
         exigirAutenticacao(); // Garante que a rota é protegida
         header('Content-Type: application/json; charset=utf-8');
 
-        $sql = 'SELECT id, nome, documento, telefone, email, curso, periodo, observacoes, status, criado_em, updated_at FROM pessoas ORDER BY id DESC';
+        $sql = 'SELECT id, nome, documento, telefone, email, curso, periodo, observacoes, status, criado_em FROM pessoas ORDER BY id DESC';
         $stmt = $this->pdo->query($sql);
         $pessoas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -37,7 +37,7 @@ class PessoasController
             return;
         }
 
-        $sql = 'SELECT id, nome, documento, telefone, email, curso, periodo, observacoes, status, criado_em, updated_at FROM pessoas WHERE id = :id';
+        $sql = 'SELECT id, nome, documento, telefone, email, curso, periodo, observacoes, status, criado_em FROM pessoas WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();

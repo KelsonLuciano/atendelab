@@ -1,123 +1,112 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cadastro de Pessoas - AtendeLab</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+<?php
+$tituloPagina = 'Pessoas atendidas';
+require __DIR__ . '/../layouts/header.php';
+?>
 
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <span class="navbar-brand">AtendeLab - Módulo Pessoas</span>
-        <a class="btn btn-outline-light btn-sm" href="?controller=auth&action=dashboard">Voltar ao Painel</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Pessoas atendidas</h1>
+        <p class="text-secondary mb-0">Cadastro, edição e inativação sem excluir o histórico.</p>
     </div>
-</nav>
+    <button class="btn btn-success" type="button" onclick="novaPessoa()">Nova pessoa</button>
+</div>
 
-<div class="container mt-4">
-    <div id="alerta"></div>
+<div id="alerta"></div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Gerenciamento de Pessoas</h2>
-        <button class="btn btn-primary" onclick="abrirFormulario()">Nova Pessoa</button>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Nome</th>
-                            <th>Documento</th>
-                            <th>E-mail</th>
-                            <th>Curso</th>
-                            <th>Período</th>
-                            <th>Status</th>
-                            <th class="text-end">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaPessoas">
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">Carregando pessoas...</td>
-                        </tr>
-                    </tbody>
-                </table>
+<div class="card border-0 shadow-sm mb-4 d-none" id="cardFormulario">
+    <div class="card-body">
+        <h2 class="h5" id="tituloFormulario">Nova pessoa</h2>
+        <form id="formPessoa">
+            <input type="hidden" name="id" id="pessoaId">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome *</label>
+                    <input class="form-control" name="nome" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Documento *</label>
+                    <input class="form-control" name="documento" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Telefone</label>
+                    <input class="form-control" name="telefone">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">E-mail *</label>
+                    <input class="form-control" type="email" name="email" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Curso</label>
+                    <input class="form-control" name="curso">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Período</label>
+                    <input class="form-control" name="periodo">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Observações</label>
+                    <textarea class="form-control" name="observacoes" rows="2"></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="ativo">Ativo</option>
+                        <option value="inativo">Inativo</option>
+                    </select>
+                </div>
             </div>
-        </div>
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-success" type="submit">Salvar</button>
+                <button class="btn btn-outline-secondary" type="button" onclick="fecharFormulario()">Cancelar</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<div class="modal fade" id="modalPessoa" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitulo">Cadastrar Pessoa</h5>
-                <button type="button" class="btn-close" onclick="fecharFormulario()"></button>
-            </div>
-            <form id="formPessoa">
-                <div class="modal-body">
-                    <input type="hidden" id="pessoaId" name="id">
-
-                    <div class="mb-3">
-                        <label for="nome" class="form-label">Nome Completo</label>
-                        <input type="text" class="form-control" id="nome" name="nome" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="documento" class="form-label">Documento (CPF/RG)</label>
-                        <input type="text" class="form-control" id="documento" name="documento" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">E-mail</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="curso" class="form-label">Curso (Opcional)</label>
-                        <input type="text" class="form-control" id="curso" name="curso">
-                    </div>
-                    <div class="mb-3">
-                        <label for="periodo" class="form-label">Período (Opcional)</label>
-                        <input type="text" class="form-control" id="periodo" name="periodo">
-                    </div>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="ativo">Ativo</option>
-                            <option value="inativo">Inativo</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="fecharFormulario()">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Salvar</button>
-                </div>
-            </form>
-        </div>
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Documento</th>
+                    <th>E-mail</th>
+                    <th>Curso</th>
+                    <th>Período</th>
+                    <th>Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaPessoas">
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Carregando pessoas...</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= $baseUrl ?? '/atendelab/public/' ?>assets/js/api.js"></script>
 
 <script>
-    // Inicializa o componente de Modal do Bootstrap
-    const modalBootstrap = new bootstrap.Modal(document.getElementById('modalPessoa'));
     const formPessoa = document.getElementById('formPessoa');
+    const cardFormulario = document.getElementById('cardFormulario');
 
-    // Funções de controle visual da Janela (Modal)
-    function abrirFormulario() {
+    function abrirFormulario() { 
+        cardFormulario.classList.remove('d-none'); 
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    }
+
+    function fecharFormulario() { 
+        cardFormulario.classList.add('d-none'); 
         formPessoa.reset();
-        document.getElementById('pessoaId').value = '';
-        document.getElementById('modalTitulo').textContent = 'Cadastrar Pessoa';
-        modalBootstrap.show();
+        document.getElementById('pessoaId').value = ''; 
     }
 
-    function fecharFormulario() {
-        modalBootstrap.hide();
+    function novaPessoa() { 
+        fecharFormulario();
+        document.getElementById('tituloFormulario').textContent = 'Nova pessoa'; 
+        abrirFormulario(); 
     }
 
-    // --- CÓDIGO DO PROFESSOR: FLUXO DE LEITURA ---
     async function carregarPessoas() {
         try {
             const dados = AtendeLabApi.toList(await AtendeLabApi.get('pessoas', 'listar'));
@@ -134,8 +123,8 @@
                 <td>${AtendeLabApi.escape(p.periodo || '')}</td>
                 <td><span class="badge ${p.status === 'ativo' ? 'text-bg-success' : 'text-bg-secondary'}">${AtendeLabApi.escape(p.status)}</span></td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editarPessoa(${Number(p.id)})">Editar</button> 
-                    <button class="btn btn-sm btn-outline-danger" onclick="inativarPessoa(${Number(p.id)})">Inativar</button>
+                    <button class="btn btn-sm btn-outline-primary shadow-sm" onclick="editarPessoa(${Number(p.id)})">Editar</button> 
+                    <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="inativarPessoa(${Number(p.id)})">Inativar</button>
                 </td>
             </tr>`).join('');
         } catch (error) { 
@@ -143,7 +132,22 @@
         }
     }
 
-    // --- CÓDIGO DO PROFESSOR: FLUXO DE GRAVAÇÃO ---
+    async function editarPessoa(id) {
+        try {
+            const resposta = await AtendeLabApi.get('pessoas', 'buscarPorId', { id });
+            const p = AtendeLabApi.toObject(resposta);
+            novaPessoa();
+            document.getElementById('tituloFormulario').textContent = 'Editar pessoa';
+            
+            for (const [key, value] of Object.entries(p)) {
+                const field = formPessoa.elements.namedItem(key);
+                if (field) field.value = value ?? '';
+            }
+        } catch (error) { 
+            AtendeLabApi.showAlert('alerta', error.message, 'danger'); 
+        }
+    }
+
     formPessoa.addEventListener('submit', async event => {
         event.preventDefault();
         const id = document.getElementById('pessoaId').value;
@@ -157,14 +161,20 @@
         }
     });
 
-    // Funções complementares para os botões da tabela funcionarem
-    async function editarPessoa(id) {
+    async function inativarPessoa(id) {
+        if (!confirm('Deseja inativar esta pessoa?')) return;
         try {
-            // Busca os dados da pessoa específica no back-end
-            const pessoa = AtendeLabApi.toObject(await AtendeLabApi.get('pessoas', 'buscarPorId', { id }));
-            
-            // Preenche o formulário com os dados retornados
-            document.getElementById('pessoaId').value = p.id || id;
-            document.getElementById('nome').value = pessoa.nome;
-            document.getElementById('documento').value = pessoa.documento;
-            document.getElementById('email').value = ...
+            const form = new FormData();
+            form.append('id', id);
+            await AtendeLabApi.post('pessoas', 'inativar', form);
+            AtendeLabApi.showAlert('alerta', 'Pessoa inativada com sucesso.');
+            await carregarPessoas();
+        } catch (error) { 
+            AtendeLabApi.showAlert('alerta', error.message, 'danger'); 
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarPessoas);
+</script>
+
+<?php require __DIR__ . '/../layouts/footer.php'; ?>
