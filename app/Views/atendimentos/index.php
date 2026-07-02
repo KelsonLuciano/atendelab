@@ -22,12 +22,14 @@ require __DIR__ . '/../layouts/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Pessoa Atendida *</label>
                     <select class="form-select" name="pessoa_id" id="selectPessoas" required>
-                        </select>
+                        <option value="">Carregando pessoas...</option>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Tipo de Demanda *</label>
                     <select class="form-select" name="tipo_atendimento_id" id="selectTipos" required>
-                        </select>
+                        <option value="">Carregando tipos...</option>
+                    </select>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Descrição / Relato do Atendimento *</label>
@@ -38,7 +40,7 @@ require __DIR__ . '/../layouts/header.php';
                     <select class="form-select" name="status">
                         <option value="aberto">Aberto</option>
                         <option value="em_andamento">Em Andamento</option>
-                        <option value="fechado">Fechado</option>
+                        <option value="concluido">Concluído</option>
                     </select>
                 </div>
             </div>
@@ -72,9 +74,52 @@ require __DIR__ . '/../layouts/header.php';
     </div>
 </div>
 
+<div class="modal fade" id="modalStatus" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Alterar Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formStatus">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="statusId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Novo status</label>
+                        <select class="form-select" name="status" id="selectStatusModal" required>
+                            <option value="aberto">Aberto</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Observação final</label>
+                        <textarea class="form-control" name="observacao_final" id="txtObservacaoModal" rows="3" placeholder="Obrigatória ao concluir o atendimento"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-success" type="submit">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     const formAtendimento = document.getElementById('formAtendimento');
     const cardFormulario = document.getElementById('cardFormulario');
+    
+    // Variáveis do Modal de Status (SEM INICIALIZAR O BOOTSTRAP AQUI)
+    const formStatus = document.getElementById('formStatus');
+    const selectStatus = document.getElementById('selectStatusModal');
+    const txtObservacao = document.getElementById('txtObservacaoModal');
+
+    // Função inteligente recomendada na apostila: Só chama o Modal quando ele for necessário
+    const getStatusModal = () => {
+        return bootstrap.Modal.getOrCreateInstance(document.getElementById('modalStatus'));
+    };
 
     function abrirFormulario() { cardFormulario.classList.remove('d-none'); }
     function fecharFormulario() { cardFormulario.classList.add('d-none'); formAtendimento.reset(); document.getElementById('atendimentoId').value = ''; }
@@ -86,7 +131,7 @@ require __DIR__ . '/../layouts/header.php';
         abrirFormulario(); 
     }
 
-    // Alimenta os SELECTS dinamicamente com informações ativas do Banco
+    // Alimenta os SELECTS dinamicamente
     async function carregarCombos() {
         try {
             const [pRaw, tRaw] = await Promise.all([
@@ -119,7 +164,7 @@ require __DIR__ . '/../layouts/header.php';
             const statusBadges = {
                 'aberto': 'text-bg-warning',
                 'em_andamento': 'text-bg-info text-white',
-                'fechado': 'text-bg-success'
+                'concluido': 'text-bg-success'
             };
 
             tbody.innerHTML = dados.map(a => `<tr>
@@ -128,14 +173,49 @@ require __DIR__ . '/../layouts/header.php';
                 <td><span class="badge text-bg-light border">${AtendeLabApi.escape(a.tipo_nome || 'Geral')}</span></td>
                 <td class="text-truncate" style="max-width: 250px;">${AtendeLabApi.escape(a.descricao)}</td>
                 <td><span class="badge ${statusBadges[a.status] || 'text-bg-secondary'}">${AtendeLabApi.escape(a.status.replace('_', ' '))}</span></td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editarAtendimento(${Number(a.id)})">Editar</button>
+                <td class="text-end text-nowrap">
+                    <button class="btn btn-sm btn-outline-info shadow-sm" onclick="abrirStatus(${Number(a.id)}, '${a.status}')">Status</button>
+                    <button class="btn btn-sm btn-outline-primary shadow-sm" onclick="editarAtendimento(${Number(a.id)})">Editar</button>
                 </td>
             </tr>`).join('');
         } catch (error) { 
             AtendeLabApi.showAlert('alerta', error.message, 'danger'); 
         }
     }
+
+    // ==========================================
+    // LÓGICA DO MODAL DE STATUS
+    // ==========================================
+    function abrirStatus(id, status_atual) {
+        document.getElementById('statusId').value = id;
+        selectStatus.value = status_atual || 'aberto';
+        txtObservacao.value = '';
+        verificarObrigatoriedade();
+        getStatusModal().show(); // <-- Aqui chamamos o modal do jeito seguro
+    }
+
+    function verificarObrigatoriedade() {
+        if (selectStatus.value === 'concluido' || selectStatus.value === 'fechado') {
+            txtObservacao.setAttribute('required', 'required');
+        } else {
+            txtObservacao.removeAttribute('required');
+        }
+    }
+
+    selectStatus.addEventListener('change', verificarObrigatoriedade);
+
+    formStatus.addEventListener('submit', async event => {
+        event.preventDefault();
+        try {
+            await AtendeLabApi.post('atendimentos', 'alterarStatus', new FormData(formStatus));
+            AtendeLabApi.showAlert('alerta', 'Status atualizado com sucesso.', 'success');
+            getStatusModal().hide(); // <-- Escondemos do jeito seguro
+            await carregarAtendimentos();
+        } catch (error) {
+            AtendeLabApi.showAlert('alerta', error.message, 'danger');
+        }
+    });
+    // ==========================================
 
     async function editarAtendimento(id) {
         try {

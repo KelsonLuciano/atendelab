@@ -13,7 +13,6 @@ class AtendimentosController
         $this->pdo = $pdo;
     }
 
-    // 1. LISTAR ATENDIMENTOS (Com os nomes corretos das tabelas oficiais)
     public function listar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -31,12 +30,10 @@ class AtendimentosController
         echo json_encode($atendimentos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
-    // 2. DETALHAR / VISUALIZAR UM ATENDIMENTO (Usado para carregar o formulário de edição)
     public function visualizar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
         
-        // Aceita o ID tanto via GET (padrão de consulta) quanto via POST
         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 
         if (!$id) {
@@ -45,7 +42,6 @@ class AtendimentosController
             return;
         }
 
-        // Busca utilizando estritamente os campos nativos oficiais da tabela 'atendimentos'
         $sql = 'SELECT id, pessoa_id, tipo_atendimento_id, descricao, status FROM atendimentos WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
@@ -60,26 +56,10 @@ class AtendimentosController
         echo json_encode($atendimento, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
-    // =========================================================================
-    // SOLUÇÃO DO BUG: APELIDOS DE ROTAS PARA EVITAR O ERRO DE "AÇÃO NÃO ENCONTRADA"
-    // =========================================================================
-    public function buscarPorId(): void
-    {
-        $this->visualizar();
-    }
+    public function buscarPorId(): void { $this->visualizar(); }
+    public function buscar(): void { $this->visualizar(); }
+    public function detalhar(): void { $this->visualizar(); }
 
-    public function buscar(): void
-    {
-        $this->visualizar();
-    }
-
-    public function detalhar(): void
-    {
-        $this->visualizar();
-    }
-    // =========================================================================
-
-    // 3. CRIAR OU ATUALIZAR ATENDIMENTO (Modifica os dados e altera o status)
     public function criar(): void
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -89,6 +69,8 @@ class AtendimentosController
         $tipo_atendimento_id = filter_input(INPUT_POST, 'tipo_atendimento_id', FILTER_VALIDATE_INT);
         $descricao = trim($_POST['descricao'] ?? '');
         $status = trim($_POST['status'] ?? 'aberto');
+        
+        $usuario_id = $this->usuarioResponsavel();
 
         if (!$pessoa_id || !$tipo_atendimento_id || $descricao === '') {
             http_response_code(400);
@@ -104,9 +86,10 @@ class AtendimentosController
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $mensagem = 'Atendimento atualizado com sucesso.';
         } else {
-            $sql = 'INSERT INTO atendimentos (pessoa_id, tipo_atendimento_id, descricao, status) 
-                    VALUES (:pessoa_id, :tipo_atendimento_id, :descricao, :status)';
+            $sql = 'INSERT INTO atendimentos (pessoa_id, tipo_atendimento_id, usuario_id, descricao, status) 
+                    VALUES (:pessoa_id, :tipo_atendimento_id, :usuario_id, :descricao, :status)';
             $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':usuario_id', $usuario_id, PDO::PARAM_INT);
             $mensagem = 'Atendimento cadastrado com sucesso.';
         }
         
@@ -119,12 +102,17 @@ class AtendimentosController
         echo json_encode(['mensagem' => $mensagem]);
     }
 
-    // 4. ALTERAR APENAS O STATUS DO ATENDIMENTO (Caso o front use uma rota dedicada)
+    // ==========================================
+    // FUNÇÃO QUE ATUALIZA O STATUS E OBSERVAÇÃO
+    // ==========================================
     public function atualizarStatus(): void
     {
         header('Content-Type: application/json; charset=utf-8');
         $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
         $status = trim($_POST['status'] ?? '');
+        
+        // Pega a observação final do modal
+        $observacao_final = trim($_POST['observacao_final'] ?? '');
 
         if (!$id || $status === '') {
             http_response_code(400);
@@ -132,21 +120,20 @@ class AtendimentosController
             return;
         }
 
-        $sql = 'UPDATE atendimentos SET status = :status WHERE id = :id';
+        // Faz o UPDATE também na observação
+        $sql = 'UPDATE atendimentos SET status = :status, observacao_final = :observacao_final WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':status', $status);
+        $stmt->bindValue(':observacao_final', $observacao_final);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
 
         echo json_encode(['mensagem' => 'Status do atendimento atualizado com sucesso.']);
     }
 
-    public function alterarStatus(): void
-    {
-        $this->atualizarStatus();
-    }
+    public function alterarStatus(): void { $this->atualizarStatus(); }
+    // ==========================================
 
-    // 5. OPÇÕES DO FORMULÁRIO (Alimenta os selects com os dados ativos do banco)
     public function opcoesFormulario(): void
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -169,5 +156,13 @@ class AtendimentosController
             http_response_code(500);
             echo json_encode(['erro' => 'Erro interno ao carregar dados do formulário.']);
         }
+    }
+
+    private function usuarioResponsavel(): int
+    {
+        if (isset($_SESSION['usuario']['id'])) {
+            return (int) $_SESSION['usuario']['id'];
+        }
+        return (int) filter_input(INPUT_POST, 'usuario_id', FILTER_VALIDATE_INT);
     }
 }

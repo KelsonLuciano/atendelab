@@ -24,12 +24,12 @@ require __DIR__ . '/../layouts/header.php';
                     <input class="form-control" name="nome" required>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Documento *</label>
-                    <input class="form-control" name="documento" required>
+                    <label class="form-label">Documento (CPF) *</label>
+                    <input class="form-control" name="documento" maxlength="14" oninput="this.value = mascaraCPF(this.value)" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Telefone</label>
-                    <input class="form-control" name="telefone">
+                    <input class="form-control" name="telefone" maxlength="15" oninput="this.value = mascaraTelefone(this.value)">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">E-mail *</label>
@@ -90,6 +90,27 @@ require __DIR__ . '/../layouts/header.php';
     const formPessoa = document.getElementById('formPessoa');
     const cardFormulario = document.getElementById('cardFormulario');
 
+    // ==========================================
+    // FUNÇÕES DE MÁSCARA (Apenas Números e Formato)
+    // ==========================================
+    function mascaraCPF(valor) {
+        return valor
+            .replace(/\D/g, '') // Remove tudo o que não é dígito
+            .replace(/(\d{3})(\d)/, '$1.$2') // Coloca um ponto entre o terceiro e o quarto dígitos
+            .replace(/(\d{3})(\d)/, '$1.$2') // Coloca um ponto entre o sexto e o sétimo dígitos
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2') // Coloca um hífen entre o nono e o décimo dígitos
+            .replace(/(-\d{2})\d+?$/, '$1'); // Impede que o usuário digite mais do que 11 números no total
+    }
+
+    function mascaraTelefone(valor) {
+        return valor
+            .replace(/\D/g, '') // Remove tudo o que não é dígito
+            .replace(/(\d{2})(\d)/, '($1) $2') // Coloca parênteses em volta dos dois primeiros dígitos
+            .replace(/(\d{5})(\d)/, '$1-$2') // Coloca hífen entre o quinto e o sexto dígitos
+            .replace(/(-\d{4})\d+?$/, '$1'); // Impede a digitação após o quarto dígito do sufixo
+    }
+    // ==========================================
+
     function abrirFormulario() { 
         cardFormulario.classList.remove('d-none'); 
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
@@ -122,7 +143,7 @@ require __DIR__ . '/../layouts/header.php';
                 <td>${AtendeLabApi.escape(p.curso || '')}</td>
                 <td>${AtendeLabApi.escape(p.periodo || '')}</td>
                 <td><span class="badge ${p.status === 'ativo' ? 'text-bg-success' : 'text-bg-secondary'}">${AtendeLabApi.escape(p.status)}</span></td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-primary shadow-sm" onclick="editarPessoa(${Number(p.id)})">Editar</button> 
                     <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="inativarPessoa(${Number(p.id)})">Inativar</button>
                 </td>
@@ -153,7 +174,7 @@ require __DIR__ . '/../layouts/header.php';
         const id = document.getElementById('pessoaId').value;
         try {
             await AtendeLabApi.post('pessoas', id ? 'atualizar' : 'criar', new FormData(formPessoa));
-            AtendeLabApi.showAlert('alerta', id ? 'Pessoa atualizada com sucesso.' : 'Pessoa cadastrada com sucesso.');
+            AtendeLabApi.showAlert('alerta', id ? 'Pessoa atualizada com sucesso.' : 'Pessoa cadastrada com sucesso.', 'success');
             fecharFormulario(); 
             await carregarPessoas();
         } catch (error) { 
@@ -167,7 +188,7 @@ require __DIR__ . '/../layouts/header.php';
             const form = new FormData();
             form.append('id', id);
             await AtendeLabApi.post('pessoas', 'inativar', form);
-            AtendeLabApi.showAlert('alerta', 'Pessoa inativada com sucesso.');
+            AtendeLabApi.showAlert('alerta', 'Pessoa inativada com sucesso.', 'success');
             await carregarPessoas();
         } catch (error) { 
             AtendeLabApi.showAlert('alerta', error.message, 'danger'); 
